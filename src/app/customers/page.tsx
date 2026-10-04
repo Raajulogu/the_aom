@@ -81,8 +81,8 @@ export default function CustomersPage() {
               <Th>Contact Person</Th>
               <Th>Phone</Th>
               <Th className="text-right">Materials</Th>
-              <Th className="text-right">Today's Soil</Th>
-              <Th className="text-right">Today's Fresh</Th>
+              <Th className="text-right">Today&apos;s Soil</Th>
+              <Th className="text-right">Today&apos;s Fresh</Th>
               <Th className="text-right">Balance</Th>
               <Th>Status</Th>
               <Th className="px-5 text-right">Actions</Th>

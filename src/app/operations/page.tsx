@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Building } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import {
   CardHead,
@@ -20,17 +20,33 @@ import { customers, materials, TODAY } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 const entries = [
-  { time: "09:42 AM", customer: "Hotel Grand A", material: "Bath Towel", soil: 25, fresh: 20, by: "Arun" },
-  { time: "09:20 AM", customer: "Ocean Resort", material: "Bedsheet", soil: 40, fresh: 30, by: "Kumar" },
-  { time: "08:55 AM", customer: "Hotel Royal B", material: "Pillow Cover", soil: 18, fresh: 18, by: "Divya" },
-  { time: "08:30 AM", customer: "Green Park Hotel", material: "Blanket", soil: 12, fresh: 12, by: "Arun" },
-  { time: "08:05 AM", customer: "Sunrise Resort", material: "Hotel Uniform", soil: 22, fresh: 15, by: "Kumar" },
+  { time: "09:42 AM", customer: "Hotel Grand A", branch: "Mission Street (Main)", material: "Bath Towel", soil: 25, fresh: 20, by: "Arun" },
+  { time: "09:20 AM", customer: "Ocean Resort", branch: "Main Resort (ECR)", material: "Bedsheet", soil: 40, fresh: 30, by: "Kumar" },
+  { time: "08:55 AM", customer: "Hotel Royal B", branch: "Heritage Quarter", material: "Pillow Cover", soil: 18, fresh: 18, by: "Divya" },
+  { time: "08:30 AM", customer: "Green Park Hotel", branch: "Single Location", material: "Blanket", soil: 12, fresh: 12, by: "Arun" },
+  { time: "08:05 AM", customer: "Sunrise Resort", branch: "Single Location", material: "Hotel Uniform", soil: 22, fresh: 15, by: "Kumar" },
 ];
 
 export default function OperationsPage() {
   const [tab, setTab] = useState<"Entry" | "Log">("Entry");
   const [selectedCustomerId, setSelectedCustomerId] = useState(customers[0].id);
+  const currentCustomer = customers.find((c) => c.id === selectedCustomerId) || customers[0];
+
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(
+    currentCustomer.branches?.[0]?.id || "",
+  );
   const [inputValues, setInputValues] = useState<Record<string, { soil: string; fresh: string }>>({});
+
+  const handleCustomerChange = (customerId: string) => {
+    setSelectedCustomerId(customerId);
+    const cust = customers.find((c) => c.id === customerId);
+    if (cust?.branches && cust.branches.length > 0) {
+      setSelectedBranchId(cust.branches[0].id);
+    } else {
+      setSelectedBranchId("");
+    }
+    setInputValues({});
+  };
 
   const handleInputChange = (materialName: string, field: "soil" | "fresh", value: string) => {
     setInputValues((prev) => ({
@@ -42,11 +58,13 @@ export default function OperationsPage() {
     }));
   };
 
+  const selectedBranch = currentCustomer.branches?.find((b) => b.id === selectedBranchId);
+
   return (
     <AdminLayout>
       <PageHeader
         title="Laundry Operations"
-        subtitle="Record today's soil received and fresh delivered."
+        subtitle="Record today's soil received and fresh delivered per location."
         action={<DateSelector value={TODAY} />}
       />
 
@@ -77,25 +95,58 @@ export default function OperationsPage() {
         <Surface className="rise mt-4 overflow-hidden">
           <CardHead
             title="Daily Entry Sheet"
-            meta={TODAY}
+            meta={
+              selectedBranch
+                ? `${currentCustomer.name} · ${selectedBranch.name}`
+                : `${currentCustomer.name} · ${TODAY}`
+            }
             action={
               <PrimaryButton className="px-3 py-2 text-xs">
                 <Plus className="size-3.5" /> Save Entries
               </PrimaryButton>
             }
           />
-          <div className="px-5 pb-3">
-            <label className="label-mono">Customer</label>
-            <select
-              value={selectedCustomerId}
-              onChange={(e) => setSelectedCustomerId(e.target.value)}
-              className="mt-2 w-full rounded-lg bg-canvas px-3 py-2 text-sm ring-1 ring-line outline-none focus:ring-2 focus:ring-brand/40 sm:max-w-xs"
-            >
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+          <div className="flex flex-col gap-3 px-5 pb-4 sm:flex-row sm:items-center">
+            <div className="flex-1 sm:max-w-xs">
+              <label className="label-mono">Customer</label>
+              <select
+                value={selectedCustomerId}
+                onChange={(e) => handleCustomerChange(e.target.value)}
+                className="mt-1.5 w-full rounded-lg bg-canvas px-3 py-2 text-sm ring-1 ring-line outline-none focus:ring-2 focus:ring-brand/40"
+              >
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {c.branches && c.branches.length > 1 ? `(${c.branches.length} branches)` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {currentCustomer.branches && currentCustomer.branches.length > 0 ? (
+              <div className="flex-1 sm:max-w-xs">
+                <div className="flex items-center justify-between">
+                  <label className="label-mono flex items-center gap-1.5 text-brand">
+                    <Building className="size-3" /> Branch / Location
+                  </label>
+                  <span className="font-mono text-[10px] text-muted-foreground">
+                    {currentCustomer.branches.length} locations
+                  </span>
+                </div>
+                <select
+                  value={selectedBranchId}
+                  onChange={(e) => setSelectedBranchId(e.target.value)}
+                  className="mt-1.5 w-full rounded-lg bg-brand-soft/40 px-3 py-2 text-sm font-medium text-ink ring-1 ring-brand/30 outline-none focus:ring-2 focus:ring-brand"
+                >
+                  {currentCustomer.branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} ({b.balance} pending)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
           </div>
+
           <TableShell>
             <thead>
               <tr className="border-y border-line bg-canvas/60">
@@ -149,7 +200,7 @@ export default function OperationsPage() {
             <thead>
               <tr className="border-y border-line bg-canvas/60">
                 <Th className="px-5">Time</Th>
-                <Th>Customer</Th>
+                <Th>Customer &amp; Branch</Th>
                 <Th>Material</Th>
                 <Th className="text-right">Soil</Th>
                 <Th className="text-right">Fresh</Th>
@@ -158,9 +209,12 @@ export default function OperationsPage() {
             </thead>
             <tbody>
               {entries.map((e) => (
-                <tr key={e.time} className="border-b border-line/70 last:border-0 hover:bg-canvas/50">
+                <tr key={e.time + e.customer} className="border-b border-line/70 last:border-0 hover:bg-canvas/50">
                   <Td className="px-5 font-mono text-[13px] text-muted-foreground">{e.time}</Td>
-                  <Td className="font-medium">{e.customer}</Td>
+                  <Td>
+                    <div className="font-medium">{e.customer}</div>
+                    <div className="font-mono text-[11px] text-muted-foreground">{e.branch}</div>
+                  </Td>
                   <Td className="text-muted-foreground">{e.material}</Td>
                   <Td className="text-right font-mono">{e.soil}</Td>
                   <Td className="text-right font-mono">{e.fresh}</Td>
@@ -173,11 +227,11 @@ export default function OperationsPage() {
       )}
 
       <Surface className="rise mt-4 overflow-hidden [animation-delay:200ms]">
-        <CardHead title="Customer Status" meta="today's completion" />
+        <CardHead title="Customer & Location Status" meta="today's operational completion" />
         <TableShell>
           <thead>
             <tr className="border-y border-line bg-canvas/60">
-              <Th className="px-5">Customer</Th>
+              <Th className="px-5">Customer / Location</Th>
               <Th className="text-right">Soil</Th>
               <Th className="text-right">Fresh</Th>
               <Th className="text-right">Balance</Th>
@@ -187,7 +241,18 @@ export default function OperationsPage() {
           <tbody>
             {customers.map((c) => (
               <tr key={c.id} className="border-b border-line/70 last:border-0">
-                <Td className="px-5 font-medium">{c.name}</Td>
+                <Td className="px-5">
+                  <div className="font-medium">{c.name}</div>
+                  {c.branches && c.branches.length > 1 ? (
+                    <div className="mt-1 flex flex-wrap gap-1 font-mono text-[10px] text-muted-foreground">
+                      {c.branches.map((b) => (
+                        <span key={b.id} className="rounded bg-canvas px-1.5 py-0.5 ring-1 ring-line">
+                          {b.name}: {b.balance} bal
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </Td>
                 <Td className="text-right font-mono">{c.soil}</Td>
                 <Td className="text-right font-mono">{c.fresh}</Td>
                 <Td className="text-right font-mono font-medium">{c.balance}</Td>

@@ -92,9 +92,17 @@ export default function CustomersPage() {
             {rows.map((c) => (
               <tr key={c.id} className="border-b border-line/70 last:border-0 hover:bg-canvas/50">
                 <Td className="px-5">
-                  <Link href={`/customers/${c.id}`} className="font-semibold hover:text-brand">
-                    {c.name}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/customers/${c.id}`} className="font-semibold hover:text-brand">
+                      {c.name}
+                    </Link>
+                    {c.branches && c.branches.length > 1 ? (
+                      <span className="rounded-md bg-brand-soft px-1.5 py-0.5 font-mono text-[10px] font-medium text-brand ring-1 ring-brand/20">
+                        {c.branches.length} branches
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="font-mono text-[11px] text-muted-foreground">{c.note}</div>
                 </Td>
                 <Td className="text-muted-foreground">{c.contact}</Td>
                 <Td className="font-mono text-[13px]">{c.phone}</Td>

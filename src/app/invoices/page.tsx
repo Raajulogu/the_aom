@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Building, X } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import {
   CardHead,
@@ -16,7 +16,7 @@ import {
   Td,
   Th,
 } from "@/components/admin/primitives";
-import { invoiceLines, invoices, rupee } from "@/lib/mock-data";
+import { invoiceLines, invoices, rupee, customers } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 const statuses = ["All", "Generated", "Pending", "Paid"] as const;
@@ -24,18 +24,35 @@ const statuses = ["All", "Generated", "Pending", "Paid"] as const;
 export default function InvoicesPage() {
   const [status, setStatus] = useState<(typeof statuses)[number]>("All");
   const [selected, setSelected] = useState(invoices[0]);
+  const [isGenerateOpen, setIsGenerateOpen] = useState(false);
+
+  // Generate Invoice form state
+  const [selectedCustId, setSelectedCustId] = useState(customers[0].id);
+  const [invoiceType, setInvoiceType] = useState<"consolidated" | "branch">("consolidated");
+  const [selectedBranchId, setSelectedBranchId] = useState("");
+
+  const activeCustomer = customers.find((c) => c.id === selectedCustId);
 
   const rows = invoices.filter((i) => status === "All" || i.status === status);
   const subtotal = invoiceLines.reduce((s, l) => s + l.amount, 0);
   const gst = Math.round(subtotal * 0.18);
 
+  const handleOpenGenerate = () => {
+    setIsGenerateOpen(true);
+    const cust = customers[0];
+    setSelectedCustId(cust.id);
+    if (cust.branches && cust.branches.length > 0) {
+      setSelectedBranchId(cust.branches[0].id);
+    }
+  };
+
   return (
     <AdminLayout>
       <PageHeader
         title="Invoices"
-        subtitle="Monthly billing for each customer."
+        subtitle="Monthly billing for each customer & branch location."
         action={
-          <PrimaryButton>
+          <PrimaryButton onClick={handleOpenGenerate}>
             <FileText className="size-4" /> Generate Invoice
           </PrimaryButton>
         }
@@ -75,7 +92,7 @@ export default function InvoicesPage() {
             <thead>
               <tr className="border-y border-line bg-canvas/60">
                 <Th className="px-5">Invoice</Th>
-                <Th>Customer</Th>
+                <Th>Customer / Branch</Th>
                 <Th>Month</Th>
                 <Th className="text-right">Amount</Th>
                 <Th>Status</Th>
@@ -93,7 +110,12 @@ export default function InvoicesPage() {
                   )}
                 >
                   <Td className="px-5 font-mono text-[13px] font-medium">{i.no}</Td>
-                  <Td className="font-medium">{i.customer}</Td>
+                  <Td>
+                    <div className="font-medium">{i.customer}</div>
+                    <div className="font-mono text-[10px] text-muted-foreground">
+                      {i.customer === "Hotel Grand A" ? "Consolidated (2 branches)" : "Single Location"}
+                    </div>
+                  </Td>
                   <Td className="text-muted-foreground">{i.month}</Td>
                   <Td className="text-right font-mono font-medium">{i.amount}</Td>
                   <Td>
@@ -113,11 +135,22 @@ export default function InvoicesPage() {
         </Surface>
 
         <Surface className="rise overflow-hidden [animation-delay:120ms]">
-          <CardHead title={selected.no} meta={`${selected.customer} · ${selected.month}`} />
+          <CardHead
+            title={selected.no}
+            meta={`${selected.customer} · ${selected.month}`}
+          />
           <div className="px-5 pb-5">
             <div className="flex items-center justify-between border-y border-line py-3">
-              <span className="label-mono">Invoice date</span>
-              <span className="font-mono text-sm">{selected.date}</span>
+              <div>
+                <span className="label-mono">Billing Scope</span>
+                <div className="font-mono text-xs font-medium text-brand">
+                  {selected.customer === "Hotel Grand A" ? "Consolidated (All Branches)" : "Main Facility"}
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="label-mono">Invoice Date</span>
+                <div className="font-mono text-xs">{selected.date}</div>
+              </div>
             </div>
             <ul className="divide-y divide-line/70">
               {invoiceLines.map((l) => (
@@ -153,6 +186,134 @@ export default function InvoicesPage() {
           </div>
         </Surface>
       </div>
+
+      {/* Generate Monthly Invoice Modal */}
+      {isGenerateOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4 backdrop-blur-xs">
+          <div
+            className="w-full max-w-lg rounded-2xl bg-card shadow-xl ring-1 ring-line"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-line px-5 py-4">
+              <div>
+                <h2 className="font-display text-lg font-bold tracking-tight">Generate Monthly Invoice</h2>
+                <p className="font-mono text-xs text-muted-foreground">Create customer or branch-level bill</p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setIsGenerateOpen(false)}
+                className="grid size-8 cursor-pointer place-items-center rounded-lg ring-1 ring-line hover:bg-canvas"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 p-5">
+              <label className="block">
+                <span className="label-mono">Select Customer</span>
+                <select
+                  value={selectedCustId}
+                  onChange={(e) => {
+                    setSelectedCustId(e.target.value);
+                    const cust = customers.find((c) => c.id === e.target.value);
+                    if (cust?.branches && cust.branches.length > 0) {
+                      setSelectedBranchId(cust.branches[0].id);
+                    }
+                  }}
+                  className="mt-1.5 w-full rounded-lg bg-canvas px-3 py-2 text-sm ring-1 ring-line outline-none focus:ring-2 focus:ring-brand/40"
+                >
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {c.branches && c.branches.length > 1 ? `(${c.branches.length} branches)` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {/* Multi-Branch Scope Selection if customer has branches */}
+              {activeCustomer?.branches && activeCustomer.branches.length > 1 ? (
+                <div className="rounded-xl bg-canvas p-3 ring-1 ring-line">
+                  <span className="label-mono flex items-center gap-1.5 text-brand">
+                    <Building className="size-3" /> Invoicing Scope
+                  </span>
+                  <div className="mt-2.5 space-y-2">
+                    <label className="flex cursor-pointer items-center gap-2.5 text-sm font-medium">
+                      <input
+                        type="radio"
+                        name="scope"
+                        checked={invoiceType === "consolidated"}
+                        onChange={() => setInvoiceType("consolidated")}
+                        className="text-brand focus:ring-brand"
+                      />
+                      <span>Consolidated Invoice (All {activeCustomer.branches.length} Branches)</span>
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2.5 text-sm font-medium">
+                      <input
+                        type="radio"
+                        name="scope"
+                        checked={invoiceType === "branch"}
+                        onChange={() => setInvoiceType("branch")}
+                        className="text-brand focus:ring-brand"
+                      />
+                      <span>Single Branch Invoice</span>
+                    </label>
+                  </div>
+
+                  {invoiceType === "branch" ? (
+                    <div className="mt-3 pt-2 border-t border-line">
+                      <span className="label-mono">Select Branch</span>
+                      <select
+                        value={selectedBranchId}
+                        onChange={(e) => setSelectedBranchId(e.target.value)}
+                        className="mt-1 w-full rounded-lg bg-card px-3 py-1.5 text-sm ring-1 ring-line outline-none focus:ring-2 focus:ring-brand/40"
+                      >
+                        {activeCustomer.branches.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="label-mono">Billing Month</span>
+                  <input
+                    defaultValue="August 2026"
+                    className="mt-1.5 w-full rounded-lg bg-canvas px-3 py-2 text-sm ring-1 ring-line outline-none focus:ring-2 focus:ring-brand/40"
+                  />
+                </label>
+                <label className="block">
+                  <span className="label-mono">Invoice Date</span>
+                  <input
+                    defaultValue="31 Aug 2026"
+                    className="mt-1.5 w-full rounded-lg bg-canvas px-3 py-2 text-sm ring-1 ring-line outline-none focus:ring-2 focus:ring-brand/40"
+                  />
+                </label>
+              </div>
+
+              <div className="rounded-xl bg-brand-soft/30 p-3 text-xs leading-relaxed text-muted-foreground ring-1 ring-brand/15">
+                💡 Historical rates will be frozen for this invoice. Generating will calculate quantities from recorded fresh laundry deliveries.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-line px-5 py-4">
+              <button
+                type="button"
+                onClick={() => setIsGenerateOpen(false)}
+                className="cursor-pointer rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-ink"
+              >
+                Cancel
+              </button>
+              <PrimaryButton onClick={() => setIsGenerateOpen(false)}>Generate Invoice</PrimaryButton>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AdminLayout>
   );
 }

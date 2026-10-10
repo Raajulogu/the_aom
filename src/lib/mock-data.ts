@@ -11,6 +11,20 @@ export const kpis = [
   { label: "Pending Invoices", value: "8", note: "₹3.1L outstanding", tone: "danger" as const },
 ];
 
+export type Branch = {
+  id: string;
+  name: string;
+  contact: string;
+  phone: string;
+  email?: string;
+  address: string;
+  gst?: string;
+  soil: number;
+  fresh: number;
+  balance: number;
+  status: "Active" | "Inactive";
+};
+
 export type Customer = {
   id: string;
   name: string;
@@ -28,6 +42,7 @@ export type Customer = {
   ops: OpsStatus;
   monthlyValue: string;
   note: string;
+  branches?: Branch[];
 };
 
 export const customers: Customer[] = [
@@ -48,6 +63,32 @@ export const customers: Customer[] = [
     ops: "Processing",
     monthlyValue: "₹84,500",
     note: "42 items open",
+    branches: [
+      {
+        id: "hotel-grand-a-main",
+        name: "Mission Street (Main)",
+        contact: "Suresh Babu",
+        phone: "98765 43210",
+        email: "ops@hotelgranda.in",
+        address: "12 Mission Street, Pondicherry 605001",
+        soil: 70,
+        fresh: 60,
+        balance: 25,
+        status: "Active",
+      },
+      {
+        id: "hotel-grand-a-beach",
+        name: "Beach Road Annex",
+        contact: "Karthik Raja",
+        phone: "98765 43219",
+        email: "annex@hotelgranda.in",
+        address: "24 Beach Road, Pondicherry 605001",
+        soil: 50,
+        fresh: 40,
+        balance: 20,
+        status: "Active",
+      },
+    ],
   },
   {
     id: "hotel-royal-b",
@@ -66,6 +107,20 @@ export const customers: Customer[] = [
     ops: "On Track",
     monthlyValue: "₹58,200",
     note: "on schedule",
+    branches: [
+      {
+        id: "hotel-royal-b-main",
+        name: "Heritage Quarter",
+        contact: "Meena Rajan",
+        phone: "98765 43211",
+        email: "front@royalb.in",
+        address: "5 Rue Suffren, Pondicherry 605001",
+        soil: 85,
+        fresh: 80,
+        balance: 20,
+        status: "Active",
+      },
+    ],
   },
   {
     id: "ocean-resort",
@@ -84,6 +139,32 @@ export const customers: Customer[] = [
     ops: "Attention",
     monthlyValue: "₹72,300",
     note: "high backlog",
+    branches: [
+      {
+        id: "ocean-resort-main",
+        name: "Main Resort (ECR)",
+        contact: "Anand Krishnan",
+        phone: "98765 43212",
+        email: "housekeeping@oceanresort.in",
+        address: "ECR Road, Kottakuppam 605104",
+        soil: 90,
+        fresh: 75,
+        balance: 40,
+        status: "Active",
+      },
+      {
+        id: "ocean-resort-spa",
+        name: "Beachside Villas & Spa",
+        contact: "Priya S",
+        phone: "98765 43218",
+        email: "villas@oceanresort.in",
+        address: "Beachside Drive, Kottakuppam 605104",
+        soil: 60,
+        fresh: 50,
+        balance: 25,
+        status: "Active",
+      },
+    ],
   },
   {
     id: "green-park-hotel",

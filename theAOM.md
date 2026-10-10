@@ -84,15 +84,17 @@ The core relationship of the application is:
 ```text
 Customer
     ↓
-Customer Materials
+Customer Branches (Optional / Multi-location: Main Branch, Beach Road Annex, etc.)
     ↓
-Customer-specific Pricing
+Customer & Branch Materials
     ↓
-Laundry Transactions
+Customer & Branch-specific Pricing (3-Tier Hierarchy)
     ↓
-Balance
+Laundry Transactions (Tracked per Branch / Location)
     ↓
-Billing
+Balance (Branch-level & Aggregated Customer Rollup)
+    ↓
+Billing (Consolidated Parent Invoice or Branch-wise)
     ↓
 Invoice
     ↓
@@ -301,6 +303,52 @@ Prefer deactivation / soft deletion.
 
 ---
 
+## 7.1 CUSTOMER BRANCHES & MULTI-LOCATION MANAGEMENT
+
+Many B2B customers (such as hotel chains, resort groups, restaurants, or heritage properties) operate across multiple physical properties or annexes under a single business entity.
+
+Example:
+* **Hotel Grand A**
+  * Main Branch (Mission Street)
+  * Beach Road Annex
+* **Hotel Royal B**
+  * Promenade Main
+  * Heritage Wing
+* **Ocean Resort**
+  * Main Resort Property
+  * Spa & Wellness Wing
+
+### Core Business Rules for Branches:
+
+1. **Optional Branches (Zero Overhead for Single Locations)**:
+   * Single-location businesses operate directly without any mandatory branch setup or branch selection clutter.
+   * Multi-location businesses can have secondary branches onboarded at any time under the parent customer.
+
+2. **Branch Management Capabilities (Admin Portal)**:
+   * Create new branches under an existing customer at any time.
+   * View all branches belonging to a customer in a dedicated directory on the Customer Detail Hub.
+   * Edit branch details (Branch Name, Contact Person, Phone, Email, Delivery Address, GST).
+   * Soft deactivate or reactivate branches (`status = 'active' | 'inactive'`) without losing historical transactions.
+   * Quick branch switcher tab bar on the Customer Detail Hub to view "All Branches (Aggregated)" or drill down into any specific branch's metrics, address, contact, and laundry activity.
+
+3. **Customer Branch Data Structure**:
+
+```text
+Branch ID (Slug or UUID, e.g. 'hotel-grand-a-beach-road')
+Customer ID (Foreign Key to parent customer)
+Branch / Location Name
+Contact Person
+Phone
+Email
+Delivery Address
+Branch GST Number (Optional; falls back to parent customer GST if omitted)
+Status (Active / Inactive)
+Created At
+Updated At
+```
+
+---
+
 # 8. MATERIAL MANAGEMENT
 
 AOM has a master list of laundry materials.
@@ -389,6 +437,20 @@ The system must support customer-specific pricing.
 
 ---
 
+## 10.1 THREE-TIER PRICING HIERARCHY (BRANCH RATE OVERRIDES)
+
+When a customer operates multiple branches, pricing follows a structured 3-tier cascade:
+
+1. **Tier 1 (Master Default Rate):** Catalog default rate for each material (e.g. Master Bedsheet rate ₹90).
+2. **Tier 2 (Customer Agreed Rate):** Base negotiated rate for the parent customer across all locations (e.g. Hotel Grand A rate ₹100).
+3. **Tier 3 (Branch Override Rate):** Optional branch-specific rate override negotiated for a specific annex or luxury property (e.g. Beach Road Annex rate ₹105).
+
+$$\text{Effective Rate} = \text{Branch Override} \rightarrow \text{Customer Agreed Rate} \rightarrow \text{Master Default Rate}$$
+
+*If a material has no branch-level override, the branch automatically inherits the parent customer's agreed rate.*
+
+---
+
 # 11. HISTORICAL PRICING RULE
 
 This is a critical business rule.
@@ -451,9 +513,15 @@ Laundry operations are the core operational workflow.
 The system tracks movement of materials between:
 
 ```text
-Customer → AOM Laundry
-AOM Laundry → Customer
+Customer (Specific Branch / Location) → AOM Laundry
+AOM Laundry → Customer (Specific Branch / Location)
 ```
+
+For multi-branch customers:
+* Laundry movement (Soil Received, Fresh Delivered) is logged **per branch**.
+* The daily entry sheet features a secondary branch selector when a multi-branch customer is chosen.
+* Opening Balance, Soil, Fresh, and Closing Balance are calculated and maintained **per branch**.
+* The parent customer displays the aggregated summary of all branch balances.
 
 The current business terminology includes:
 
@@ -837,6 +905,9 @@ Admin should be able to:
 
 * Select customer
 * Select billing period
+* Choose invoice scope:
+  * **Consolidated Invoice**: Combines all active branches into a single monthly parent invoice, with itemized line items grouped by branch.
+  * **Branch-Wise Invoice**: Issues a dedicated monthly invoice to a specific branch (for decentralized accounting or separate billing entities).
 * Review billable records
 * Generate invoice
 * View previous invoices

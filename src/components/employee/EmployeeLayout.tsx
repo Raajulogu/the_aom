@@ -5,83 +5,26 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import {
   LayoutDashboard,
-  Building2,
-  Package,
-  IndianRupee,
   ClipboardList,
-  FileText,
-  BarChart3,
-  Users,
-  Settings,
+  Building2,
+  History,
   Menu,
   X,
-  Search,
   Bell,
   LogOut,
+  Plus,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 
 const nav = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/customers", label: "Customers", icon: Building2 },
-  { href: "/materials", label: "Materials", icon: Package },
-  { href: "/pricing", label: "Pricing", icon: IndianRupee },
-  { href: "/operations", label: "Laundry Operations", icon: ClipboardList },
-  { href: "/invoices", label: "Invoices", icon: FileText },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
-  { href: "/employees", label: "Employees", icon: Users },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/employee", label: "Operations Dashboard", icon: LayoutDashboard },
+  { href: "/employee/operations", label: "Daily Entry Sheet", icon: ClipboardList },
+  { href: "/employee/customers", label: "Customer Balances", icon: Building2 },
+  { href: "/employee/history", label: "Shift Activity Log", icon: History },
 ] as const;
-
-function PortalSwitch() {
-  const pathname = usePathname();
-
-  return (
-    <div>
-      <div className="label-mono mb-2 px-3">Switch Portal</div>
-      <div className="grid grid-cols-3 rounded-lg bg-canvas p-1 text-[11px] font-medium ring-1 ring-line">
-        <Link
-          href="/"
-          className={cn(
-            "rounded-md py-1.5 text-center transition-colors",
-            !pathname.startsWith("/employee") && !pathname.startsWith("/portal")
-              ? "bg-card text-ink shadow-sm ring-1 ring-line"
-              : "text-muted-foreground hover:text-ink"
-          )}
-        >
-          Admin
-        </Link>
-        <Link
-          href="/employee"
-          className={cn(
-            "rounded-md py-1.5 text-center transition-colors",
-            pathname.startsWith("/employee")
-              ? "bg-card text-ink shadow-sm ring-1 ring-line"
-              : "text-muted-foreground hover:text-ink"
-          )}
-        >
-          Staff
-        </Link>
-        <Link
-          href="/portal"
-          className={cn(
-            "rounded-md py-1.5 text-center transition-colors",
-            pathname.startsWith("/portal")
-              ? "bg-card text-ink shadow-sm ring-1 ring-line"
-              : "text-muted-foreground hover:text-ink"
-          )}
-        >
-          Hotel
-        </Link>
-      </div>
-      <p className="mt-2 px-1 text-[11px] leading-snug text-muted-foreground">
-        Admin privileges enable previewing Staff and Hotel views.
-      </p>
-    </div>
-  );
-}
 
 function Brand() {
   return (
@@ -90,8 +33,8 @@ function Brand() {
         <span className="-rotate-6 font-display text-sm font-bold text-canvas">A</span>
       </div>
       <div>
-        <div className="font-display text-[15px] leading-none font-bold tracking-tight">AOM Laundry</div>
-        <div className="label-mono mt-1">Admin Operations</div>
+        <div className="font-display text-[15px] leading-none font-bold tracking-tight">AOM Staff Hub</div>
+        <div className="label-mono mt-1 text-warning">Floor Operations</div>
       </div>
     </div>
   );
@@ -102,9 +45,9 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <nav className="flex flex-col gap-1">
-      <span className="label-mono mb-1 px-3">Workspace</span>
+      <span className="label-mono mb-1 px-3">Staff Workspace</span>
       {nav.map(({ href, label, icon: Icon }) => {
-        const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+        const active = href === "/employee" ? pathname === "/employee" : pathname.startsWith(href);
         return (
           <Link
             key={href}
@@ -113,7 +56,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
               active
-                ? "bg-brand-soft font-medium text-brand ring-1 ring-brand/15"
+                ? "bg-warning-soft font-medium text-ink ring-1 ring-warning/30"
                 : "text-muted-foreground hover:bg-canvas hover:text-ink"
             )}
           >
@@ -126,29 +69,50 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function AdminLayout({ children }: { children: ReactNode }) {
+export function EmployeeLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, role, logout } = useAuth();
 
   return (
-    <AuthGuard allowedRoles={["admin"]}>
+    <AuthGuard allowedRoles={["admin", "staff"]}>
       <div className="flex min-h-screen bg-canvas text-ink">
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-line bg-card/70 px-4 py-6 backdrop-blur-md lg:flex">
           <div className="mb-8 px-2">
             <Brand />
           </div>
+
           <NavList />
+
+          <div className="mt-6 px-2">
+            <Link
+              href="/employee/operations"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-ink py-2.5 text-xs font-semibold text-canvas shadow transition-opacity hover:opacity-90"
+            >
+              <Plus className="size-3.5" /> Fast Daily Entry
+            </Link>
+          </div>
+
           <div className="mt-auto pt-6 space-y-4">
-            <PortalSwitch />
+            {role === "admin" && (
+              <div className="rounded-lg bg-sky-soft/40 p-2.5 text-xs ring-1 ring-sky/30">
+                <div className="flex items-center gap-1.5 font-medium text-sky">
+                  <ShieldAlert className="size-3.5" /> Admin Viewing Mode
+                </div>
+                <Link href="/" className="mt-1 block font-mono text-[11px] text-muted-foreground hover:text-ink">
+                  &larr; Return to Admin Portal
+                </Link>
+              </div>
+            )}
+
             <div className="flex items-center justify-between border-t border-line pt-4 px-2">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="grid size-8 shrink-0 place-items-center rounded-full bg-sky-soft font-display text-xs font-bold text-sky">
-                  {user?.avatar || "R"}
+                <div className="grid size-8 shrink-0 place-items-center rounded-full bg-warning-soft font-display text-xs font-bold text-warning">
+                  {user?.avatar || "A"}
                 </div>
                 <div className="min-w-0">
-                  <div className="truncate text-xs font-semibold">{user?.name || "Rajesh Kumar"}</div>
+                  <div className="truncate text-xs font-semibold">{user?.name || "Arun Pandian"}</div>
                   <div className="truncate font-mono text-[10px] text-muted-foreground">
-                    {user?.email || "admin@aomlaundry.in"}
+                    {user?.email || "staff@aomlaundry.in"}
                   </div>
                 </div>
               </div>
@@ -186,7 +150,6 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               </div>
               <NavList onNavigate={() => setOpen(false)} />
               <div className="mt-auto pt-6 space-y-4">
-                <PortalSwitch />
                 <button
                   type="button"
                   onClick={logout}
@@ -210,16 +173,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               >
                 <Menu className="size-4" />
               </button>
-              <span className="truncate font-display font-bold tracking-tight">AOM Admin</span>
+              <span className="truncate font-display font-bold tracking-tight">Staff Portal</span>
             </div>
             <div className="hidden min-w-0 lg:block">
-              <div className="relative max-w-md">
-                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  className="w-full rounded-lg bg-card py-2 pr-3 pl-9 text-sm ring-1 ring-line outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-brand/40"
-                  placeholder="Search customers, invoices, materials…"
-                />
-              </div>
+              <span className="rounded-full bg-warning-soft px-3 py-1 font-mono text-xs font-medium text-warning ring-1 ring-warning/30">
+                Operational Staff Access &bull; Shift Shift-A
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -228,11 +187,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 className="relative grid size-9 place-items-center rounded-lg bg-card ring-1 ring-line"
               >
                 <Bell className="size-4" strokeWidth={1.75} />
-                <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-danger" />
               </button>
               <div className="hidden text-right sm:block">
-                <div className="text-sm leading-none font-semibold">{user?.name || "Rajesh Kumar"}</div>
-                <div className="mt-1 font-mono text-[10px] text-muted-foreground">System Administrator</div>
+                <div className="text-sm leading-none font-semibold">{user?.name || "Arun Pandian"}</div>
+                <div className="mt-1 font-mono text-[10px] text-muted-foreground">Operations Supervisor</div>
               </div>
               <button
                 type="button"

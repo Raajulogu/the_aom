@@ -3,14 +3,26 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-type Tone = "brand" | "sky" | "warn" | "danger" | "neutral" | "ink";
+type Tone =
+  | "brand"
+  | "sky"
+  | "warn"
+  | "warning"
+  | "danger"
+  | "neutral"
+  | "ink"
+  | "default"
+  | "success";
 
-const toneChip: Record<Tone, string> = {
+const toneChip: Record<string, string> = {
   brand: "bg-brand-soft text-brand",
+  success: "bg-brand-soft text-brand",
   sky: "bg-sky-soft text-sky",
   warn: "bg-warn-soft text-warn",
+  warning: "bg-warn-soft text-warn",
   danger: "bg-danger-soft text-danger",
   neutral: "bg-canvas text-muted-foreground",
+  default: "bg-canvas text-muted-foreground",
   ink: "bg-ink text-canvas",
 };
 
@@ -21,17 +33,20 @@ export function Surface({ className, children }: { className?: string; children:
 export function PageHeader({
   title,
   subtitle,
+  meta,
   action,
 }: {
   title: string;
   subtitle?: string;
+  meta?: string;
   action?: ReactNode;
 }) {
+  const desc = subtitle ?? meta;
   return (
     <div className="rise grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 sm:flex sm:flex-wrap sm:justify-between">
       <div className="min-w-0">
         <h1 className="font-display text-2xl font-bold tracking-tight text-balance sm:text-[28px]">{title}</h1>
-        {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
+        {desc ? <p className="mt-1 text-sm text-muted-foreground">{desc}</p> : null}
       </div>
       {action}
     </div>
@@ -40,7 +55,7 @@ export function PageHeader({
 
 export function Chip({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
   return (
-    <span className={cn("inline-block rounded-md px-2.5 py-1 text-[11px] font-medium", toneChip[tone])}>
+    <span className={cn("inline-block rounded-md px-2.5 py-1 text-[11px] font-medium", toneChip[tone] ?? toneChip.neutral)}>
       {children}
     </span>
   );
@@ -66,14 +81,17 @@ export function KpiCard({
   label,
   value,
   note,
+  delta,
   tone = "brand",
 }: {
   label: string;
   value: string;
   note?: string;
+  delta?: string;
   tone?: Tone;
 }) {
   const dark = tone === "ink";
+  const noteText = note ?? delta;
   return (
     <div
       className={cn(
@@ -85,7 +103,7 @@ export function KpiCard({
         <span
           className={cn(
             "grid size-6 place-items-center rounded-md text-xs",
-            dark ? "bg-canvas/10 text-brand-soft" : toneChip[tone],
+            dark ? "bg-canvas/10 text-brand-soft" : (toneChip[tone] ?? toneChip.brand),
           )}
         >
           ●
@@ -95,9 +113,9 @@ export function KpiCard({
         </span>
       </div>
       <div className="mt-3 font-display text-3xl font-bold tracking-tight">{value}</div>
-      {note ? (
+      {noteText ? (
         <div className={cn("mt-2 font-mono text-[11px]", dark ? "text-brand-soft" : "text-muted-foreground")}>
-          {note}
+          {noteText}
         </div>
       ) : null}
     </div>
@@ -145,8 +163,20 @@ export function Th({ className, children }: { className?: string; children?: Rea
   );
 }
 
-export function Td({ className, children }: { className?: string; children?: ReactNode }) {
-  return <td className={cn("px-3 py-3 align-middle", className)}>{children}</td>;
+export function Td({
+  className,
+  children,
+  mono,
+}: {
+  className?: string;
+  children?: ReactNode;
+  mono?: boolean;
+}) {
+  return (
+    <td className={cn("px-3 py-3 align-middle", mono && "font-mono", className)}>
+      {children}
+    </td>
+  );
 }
 
 export function TableShell({ children }: { children: ReactNode }) {
